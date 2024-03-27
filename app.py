@@ -1,26 +1,46 @@
 import os
+import re
+from pytube import YouTube
 from openai import OpenAI
 from dotenv import load_dotenv
 
-f = open('minutes.txt', 'r')
-content = f.read()
-print(content)
-
 load_dotenv()  # take environment variables from .env.
-
-# test = os.environ.get("TEST", "failed")
-# print(test)
 
 client = OpenAI(
     # defaults to os.environ.get("OPENAI_API_KEY")
-    # api_key=os.environ.get("OPENAI_API_KEY"),
 )
 from docx import Document
 
+def extract_audio(video_url):
+    # Create the 'audio' folder if it doesn't exist
+    if not os.path.exists('./audio'):
+        os.makedirs('./audio')
+
+    yt = YouTube(video_url)
+    audio_stream = yt.streams.filter(only_audio=True).first()
+    
+    # Extract the title of the video
+    video_title = yt.title
+    
+    # Remove special characters, keep only lowercase letters, numbers, and hyphens
+    video_title = re.sub(r'[^a-z0-9-]', '', video_title.lower())
+    
+    # Replace consecutive spaces with a single hyphen
+    video_title = re.sub(r'\s+', '-', video_title)
+    
+    # Download the audio
+    audio_stream.download(output_path='./audio', filename=f'{video_title}.wav')
+
+    return video_title
+
 def transcribe_audio(audio_file_path):
+    print(f'Transcribing audio from: {audio_file_path}')
     with open(audio_file_path, 'rb') as audio_file:
-        transcription = client.audio.transcriptions.create("whisper-1", audio_file)
-    return transcription['text']
+        transcription = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
+    return transcription.text
 
 def meeting_minutes(transcription):
     abstract_summary = abstract_summary_extraction(transcription)
@@ -115,9 +135,11 @@ def save_as_docx(minutes, filename):
         doc.add_paragraph()
     doc.save(filename)
 
-# audio_file_path = "Earningscall.wav"
-# transcription = transcribe_audio(audio_file_path)
-minutes = meeting_minutes(content)
-print(minutes)
+def main():
+    video_url = input("Enter the YouTube video URL: ")
+    audio_file_name = extract_audio(video_url)
+    transcription = transcribe_audio(f'./audio/{audio_file_name}.wav')
+    minutes = meeting_minutes(transcription)
+    save_as_docx(minutes, 'meeting_minutes.docx')
 
-save_as_docx(minutes, 'meeting_minutes.docx')
+main()
