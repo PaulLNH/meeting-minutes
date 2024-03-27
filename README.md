@@ -2,6 +2,14 @@
 
 Using OpenAI's GPT-4 model to transcribe meetings into a public minutes document.
 
+## Python Environment
+
+This project includes a python virtual environment. To use this enter the following
+
+```
+source env/Scripts/activate
+```
+
 ## Prompts
 
 ### Abstract Summary Extraction
