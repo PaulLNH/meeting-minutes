@@ -23,7 +23,7 @@ def extract_audio(video_url):
     video_title = yt.title
     
     # Remove special characters, keep only lowercase letters, numbers, and hyphens
-    video_title = re.sub(r'[^a-z0-9-]', '', video_title.lower())
+    video_title = re.sub(r'[^a-z0-9\s-]', '', video_title.lower())
     
     # Replace consecutive spaces with a single hyphen
     video_title = re.sub(r'\s+', '-', video_title)
@@ -55,74 +55,130 @@ def meeting_minutes(transcription):
     }
 
 def abstract_summary_extraction(transcription):
-    response = client.chat.completions.create(
-        model="gpt-4",
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a highly skilled AI trained in language comprehension and summarization. I would like you to read the following text and summarize it into a concise abstract paragraph. Aim to retain the most important points, providing a coherent and readable summary that could help a person understand the main points of the discussion without needing to read the entire text. Please avoid unnecessary details or tangential points."
-            },
-            {
-                "role": "user",
-                "content": transcription
-            }
-        ]
-    )
-    return response.choices[0].message.content
+    # Split the transcription into smaller chunks (each chunk within the token limit)
+    chunk_size = 8000  # Adjust the chunk size as per your requirements
+    chunks = [transcription[i:i+chunk_size] for i in range(0, len(transcription), chunk_size)]
+
+    # Initialize an empty list to store the responses for each chunk
+    responses = []
+
+    # Iterate through each chunk and send it to the API
+    for chunk in chunks:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            temperature=0,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a highly skilled AI trained in language comprehension and summarization. I would like you to read the following text and summarize it into a concise abstract paragraph. Aim to retain the most important points, providing a coherent and readable summary that could help a person understand the main points of the discussion without needing to read the entire text. Please avoid unnecessary details or tangential points."
+                },
+                {
+                    "role": "user",
+                    "content": chunk
+                }
+            ]
+        )
+        # Append the response for each chunk to the list of responses
+        responses.append(response.choices[0].message.content)
+
+    # Concatenate the responses from all chunks into a single abstract
+    abstract = ' '.join(responses)
+    return abstract
+
 
 
 def key_points_extraction(transcription):
-    response = client.chat.completions.create(
-        model="gpt-4",
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a proficient AI with a specialty in distilling information into key points. Based on the following text, identify and list the main points that were discussed or brought up. These should be the most important ideas, findings, or topics that are crucial to the essence of the discussion. Your goal is to provide a list that someone could read to quickly understand what was talked about."
-            },
-            {
-                "role": "user",
-                "content": transcription
-            }
-        ]
-    )
-    return response.choices[0].message.content
+    # Split the transcription into smaller chunks
+    chunk_size = 8000  # Adjust the chunk size as per your requirements
+    chunks = [transcription[i:i+chunk_size] for i in range(0, len(transcription), chunk_size)]
 
+    # Initialize an empty list to store the key points from each chunk
+    key_points_list = []
+
+    # Iterate through each chunk and send it to the API
+    for chunk in chunks:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            temperature=0,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a proficient AI with a specialty in distilling information into key points. Based on the following text, identify and list the main points that were discussed or brought up. These should be the most important ideas, findings, or topics that are crucial to the essence of the discussion. Your goal is to provide a list that someone could read to quickly understand what was talked about."
+                },
+                {
+                    "role": "user",
+                    "content": chunk
+                }
+            ]
+        )
+        # Append the key points from each chunk to the list
+        key_points_list.append(response.choices[0].message.content)
+
+    # Concatenate the key points from all chunks into a single string
+    key_points = ' '.join(key_points_list)
+    return key_points
 
 def action_item_extraction(transcription):
-    response = client.chat.completions.create(
-        model="gpt-4",
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an AI expert in analyzing conversations and extracting action items. Please review the text and identify any tasks, assignments, or actions that were agreed upon or mentioned as needing to be done. These could be tasks assigned to specific individuals, or general actions that the group has decided to take. Please list these action items clearly and concisely."
-            },
-            {
-                "role": "user",
-                "content": transcription
-            }
-        ]
-    )
-    return response.choices[0].message.content
+    # Split the transcription into smaller chunks
+    chunk_size = 8000  # Adjust the chunk size as per your requirements
+    chunks = [transcription[i:i+chunk_size] for i in range(0, len(transcription), chunk_size)]
+
+    # Initialize an empty list to store the action items from each chunk
+    action_items_list = []
+
+    # Iterate through each chunk and send it to the API
+    for chunk in chunks:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            temperature=0,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an AI expert in analyzing conversations and extracting action items. Please review the text and identify any tasks, assignments, or actions that were agreed upon or mentioned as needing to be done. These could be tasks assigned to specific individuals, or general actions that the group has decided to take. Please list these action items clearly and concisely."
+                },
+                {
+                    "role": "user",
+                    "content": chunk
+                }
+            ]
+        )
+        # Append the action items from each chunk to the list
+        action_items_list.append(response.choices[0].message.content)
+
+    # Concatenate the action items from all chunks into a single string
+    action_items = ' '.join(action_items_list)
+    return action_items
 
 def sentiment_analysis(transcription):
-    response = client.chat.completions.create(
-        model="gpt-4",
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": "As an AI with expertise in language and emotion analysis, your task is to analyze the sentiment of the following text. Please consider the overall tone of the discussion, the emotion conveyed by the language used, and the context in which words and phrases are used. Indicate whether the sentiment is generally positive, negative, or neutral, and provide brief explanations for your analysis where possible."
-            },
-            {
-                "role": "user",
-                "content": transcription
-            }
-        ]
-    )
-    return response.choices[0].message.content
+    # Split the transcription into smaller chunks
+    chunk_size = 8000  # Adjust the chunk size as per your requirements
+    chunks = [transcription[i:i+chunk_size] for i in range(0, len(transcription), chunk_size)]
+
+    # Initialize an empty list to store the sentiment analysis results from each chunk
+    sentiment_results_list = []
+
+    # Iterate through each chunk and send it to the API
+    for chunk in chunks:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            temperature=0,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "As an AI with expertise in language and emotion analysis, your task is to analyze the sentiment of the following text. Please consider the overall tone of the discussion, the emotion conveyed by the language used, and the context in which words and phrases are used. Indicate whether the sentiment is generally positive, negative, or neutral, and provide brief explanations for your analysis where possible."
+                },
+                {
+                    "role": "user",
+                    "content": chunk
+                }
+            ]
+        )
+        # Append the sentiment analysis result from each chunk to the list
+        sentiment_results_list.append(response.choices[0].message.content)
+
+    # Concatenate the sentiment analysis results from all chunks into a single string
+    sentiment_results = ' '.join(sentiment_results_list)
+    return sentiment_results
 
 def save_as_docx(minutes, filename):
     doc = Document()
@@ -140,6 +196,6 @@ def main():
     audio_file_name = extract_audio(video_url)
     transcription = transcribe_audio(f'./audio/{audio_file_name}.wav')
     minutes = meeting_minutes(transcription)
-    save_as_docx(minutes, 'meeting_minutes.docx')
+    save_as_docx(minutes, f'{audio_file_name}.docx')
 
 main()
