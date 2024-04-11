@@ -140,6 +140,6 @@ def main():
     audio_file_name = extract_audio(video_url)
     transcription = transcribe_audio(f'./audio/{audio_file_name}.wav')
     minutes = meeting_minutes(transcription)
-    save_as_docx(minutes, 'meeting_minutes.docx')
+    save_as_docx(minutes, f'{audio_file_name}.docx')
 
 main()
